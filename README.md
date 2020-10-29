@@ -1,6 +1,12 @@
-**Actividad de evaluación de la asignatura Métodos Estadísticos Avanzados**
+**Actividad de evaluación de la asignatura Métodos Estadísticos Avanzados** 
+
+
 *Profesor: Juan David Ospina Arango*
+
+
 Maestría en Ciencia de Datos y Analítica 
+
+
 Universidad Eafit
 
 Catalina Piedrahita Jaramillo, Susana Londoño Muñoz, David Betancur Londoño, Diego Jaramillo Zapata y Diego Valderrama Laverde
