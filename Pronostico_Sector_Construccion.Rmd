@@ -1,15 +1,20 @@
 ---
-title: "**Actividad de evaluación de la asignatura Métodos Estadísticos Avanzados**"
-subtitle: "*Profesor: Juan David Ospina Arango*"
-author: "Catalina Piedrahita Jaramillo, Susana Londoño Muñoz, David Betancur Londoño, Diego Jaramillo Zapata y Diego Valderrama Laverde"
-output: html_document
+title: '**Actividad de evaluación de la asignatura Métodos Estadísticos Avanzados**'
+author: Catalina Piedrahita Jaramillo, Susana Londoño Muñoz, David Betancur Londoño,
+  Diego Jaramillo Zapata y Diego Valderrama Laverde
+subtitle: '*Profesor: Juan David Ospina Arango*'
+output:
+  html_document: default
+  word_document: default
+  always_allow_html: true
 ---
 
 ## **Entendimiento del problema** 
 
-Para el presente trabajo, se seleccionó dentro de la sección económica de la *Construcción* las clases F4111 - Construcción de edificios residenciales y F4112 - Construcción de edificios no residenciales. Es importante considerar que el sector de la construcción representa cerca del 6% del PIB de Colombia, donde las clases seleccionadas concentran aproximadamente el 48% del PIB del sector[^1]. Se resalta que si bien, el sector de la construcción no tiene una participación alta en torno al PIB, es un sector clave en términos de los encadenamientos productivos que posibilita, al ser un gran demandante de factores productivos (p.e: cemento, hierro, transporte, artículos para el hogar, entre otros) y un gran dinamizador del mercado laboral. Además, es un sector clave en términos de desarrollo económico y social, por un lado, es un medio para generar desarrollo urbano y, por otro, propiciar soluciones habitacionales que redunden en un mayor bienestar para la población. Su evolución está ligada a condiciones de demanda agregada, asociadas con la disponibilidad de pago de las personas (ejemplo: empleo, niveles salariales, inflación), el costo de oportunidad del dinero (tasa de interés), entre otros. A su vez, el sector, a nivel de oferta, está influenciado por el comportamiento de sus índices de costos, la dinámica de la inversión privada y pública, las condiciones favorables de la economía, restricciones normativas, entre otros.
+Para el presente trabajo, se seleccionaron datos del sector de la construcción. De acuerdo con la clasifiación CIIU corresponden a la sección económica de la *Construcción* y las clases F4111 - Construcción de edificios residenciales y F4112 - Construcción de edificios no residenciales. 
+El sector de la construcción representa cerca del 6% del PIB de Colombia y las clases seleccionadas concentran aproximadamente el 48% del PIB del sector[^1]. Si bien el sector de la construcción no tiene una participación alta en torno al PIB, es un sector clave en términos de los encadenamientos productivos que posibilita, al ser un gran demandante de factores productivos (p.e: cemento, hierro, transporte, artículos para el hogar, entre otros) y un gran dinamizador del mercado laboral. Además, es un sector clave en términos de desarrollo económico y social, por un lado, es un medio para generar desarrollo urbano y, por otro, propiciar soluciones habitacionales que redunden en un mayor bienestar para la población. Su evolución está ligada a condiciones de demanda agregada, asociadas con la disponibilidad de pago de las personas (ejemplo: empleo, niveles salariales, inflación), el costo de oportunidad del dinero (tasa de interés), entre otros. A su vez, el sector, a nivel de oferta, está influenciado por el comportamiento de sus índices de costos, la dinámica de la inversión privada y pública, las condiciones favorables de la economía, restricciones normativas, entre otros.
 
-Bajo este contexto, el objetivo de este trabajo es caracterizar las relaciones, que desde la teoría económica, se pueden plantear entre estos indicadores agregados y los costos y gastos de ventas de las empresas colombianas vigiladas por la SuperSociedades y que se clasifican en las clases enunciadas anteriormente.
+Bajo el anterior contexto, el objetivo de este trabajo es caracterizar las relaciones, que desde la teoría económica, se pueden plantear entre estos indicadores agregados y los costos y gastos de ventas de las empresas colombianas vigiladas por la SuperSociedades y que se clasifican en las clases enunciadas anteriormente.
 
 Parte de la metodología aplicada en este trabajo, se basó en los pasos sugeridos por Correa y Salazar (2016) [^2]. 
  
@@ -40,23 +45,25 @@ library(ggpubr)
 library(MLmetrics)
 ```
 
-```{r}
+```{r include=FALSE}
+
 # La semilla aleatoria:
 set.seed(20201018)
 # Ruta para los diferentes usuarios:
 pc_david <- "C:/Users/Carolina/Desktop/Base de datos.xlsx"
 pc_su <- "C:/Users/sulon/OneDrive - Universidad EAFIT/MEA_actividad_evaluativa/curated/Base de datos.xlsx"
-pc_valde ="D:/OneDrive - Grupo EPM/Diego_Valderrama/Personal/EAFIT/2020 - II/4. Métodos Estadisticos Avanzados/Trabajo Final/Base de datos.xlsx"
+pc_valde <- "D:/OneDrive - Grupo EPM/Diego_Valderrama/Personal/EAFIT/2020 - II/4. Métodos Estadisticos Avanzados/Trabajo Final/Base de datos.xlsx"
 pc_jara <- "C:/Users/djaramiz/Universidad EAFIT/Susana Londoño Muñoz - MEA_actividad_evaluativa/curated/Base de datos.xlsx"
 pc_cata<-"C:/Users/ASUS/Universidad EAFIT/Susana Londoño Muñoz - MEA_actividad_evaluativa/curated/Base de datos.xlsx"
 
+pc_ruta <- pc_su
 ```
 
 ## **Datos seleccionados y fuentes**
 
 #### **Datos de costos y gastos de las empresas clasificadas en F4111 - Construcción de edificios residenciales y F4112 - Construcción de edificios no residenciales**
 
-Para la consecución de estos datos se utilizó como fuente la Superintendencia de Sociedades, accediendo a la base de datos de estados financieros para los años 2016, 2017, 2018 y 2019. Donde se seleccionaron las plenas [^3].
+Para la consecución de estos datos se utilizó como fuente la Superintendencia de Sociedades, accediendo a la base de reportes de estados financieros para los años 2016, 2017, 2018 y 2019. Donde se seleccionaron las plenas individuales [^3].
 
 [^3]: Superintendencia de Sociedades, 2020. Sistema Integrado de Información Societaria. Disponible en: https://siis.ia.supersociedades.gov.co/
 
@@ -89,7 +96,7 @@ Esta información, a nivel *crudo*, se consolidó en un archivo en Excel, que po
 
 ```{r}
 # Se leen los datos:
-bd_clean <- read_excel(pc_su, 
+bd_clean <- read_excel(pc_ruta, 
     col_types = c("text", "text", "text", 
         "numeric", "numeric", "numeric", 
         "numeric", "numeric", "numeric", 
@@ -106,12 +113,15 @@ bd_clean <- read_excel(pc_su,
         "numeric", "numeric"))
 ```
 
-```{r}
+```{r include=FALSE}
 #Diccionario de las variables
 Nombre_Variable_base_de_datos <-c("Anio", "Nit", "Tot_CyG", "Tot_Ingresos", "PIB", "Cta_corr", "TRM", "T_interv", "T_Desemp", "Inflacion", "Bal_Fcal", "ICCV_var_tot", "ICCV_Mat", "ICCV_manobra", "ICCV_maq_eq", "ICCV_unifam", "ICCV_multifam", "IPP", "IPP_Mat", "IPVN_casa_nueva", "IPVN_tot_nal", "IPVU", "Cem_pro", "Cem_des", "Conc_pro", "PIB_CONS_ERNR", "VAR_PIB_CONS_ERNR", "Area_ap_viv", "Var_Area_ap_viv", "Unid_aprob", "Var_unid_aprob", "Var_IPVN")
 
 Significado <-c("Año", "Nit", "Total Costos y Gastos", "Total Ingresos", "Producto Interno Bruto", "Cuenta corriente en Millones en USD", "Tasa Representativa del Mercado", "Tasa de Intervención", "Tasa de Desempleo", "Inflación", "Balance Fiscal Miles de Millones COP", "Índice de Costos de la Construcción de Vivienda Variación Total", "Índice de Costos de la Construcción de Vivienda Materiales", "Índice de Costos de la Construcción de Vivienda Mano de Obra", "Índice de Costos de la Construcción de Vivienda Maquinaria y Equipo", "Índice de Costos de la Construcción de Vivienda Unifamiliar", "Índice de Costos de la Construcción de Vivienda Multifamiliar", "Índice de Precios del Productor Total", "Índice de Precios del Productor Materiales", "Índice de Precios de Vivienda Casas", "Índice de Precios de Vivienda Nueva Total Nacional", "Índice de Precios de Vivienda Usada", "Cemento producido Toneladas", "Cemento despechado Toneladas", "Concreto producido Toneladas", "PIB actividad constructiva edificadora residencial y no residencial", "Variación PIB actividad constructiva edificadora residencial y no residencial", "Área aprobada de vivienda metros cuadrados", "Variación Área aprobada de vivienda metros cuadrados", "Unidades aprobadas", "Variación unidades aprobadas", "Variación Índice de Precios de Vivienda Nueva")
+```
 
+
+```{r}
 Diccionario <-data.frame(Nombre_Variable_base_de_datos, Significado)
 
 Diccionario %>% kbl(row.names = FALSE) %>% kable_styling()
@@ -121,7 +131,7 @@ Diccionario %>% kbl(row.names = FALSE) %>% kable_styling()
 
 **Análisis preliminar**
 
-```{r}
+```{r include=FALSE}
 vars_me <- c("Anio", "PIB","Cta_corr","TRM","T_interv","T_Desemp","Inflacion", "Bal_Fcal", "ICCV_var_tot",
              "ICCV_Mat", "ICCV_manobra", "ICCV_maq_eq","ICCV_unifam", "ICCV_multifam","IPP",
              "IPP_Mat", "IPVN_ciudad", "IPVN_casa_nueva", "IPVN_tot_nal", "IPVU", "Cem_pro", "Cem_des", 
@@ -208,11 +218,14 @@ ggarrange(trm_pl, ti_pl, td_pl, i_pl,
           ncol = 2, nrow = 2)
 
 ```
+
 Esta gráfica nos muestra en el panel A el promedio de la tasa representativa del mercado (TRM) de 2016 a 2019, se puede observar un gran crecimiento en el último año. En el panel B y el D se puede observar la tasa de intervención y la inflación de manera respectiva, en estos se puede ver una pendiente negativa, lo que implica que ambos han disminuido. En el panel C se muestra el incremento de un 1% de la tasa de desempleo en los años estudiados. 
+
 
 ```{r}
 var_und_pl
 ```
+
 
 
 ```{r}
@@ -221,13 +234,16 @@ ggarrange(cc_pl, bf_pl,
           ncol = 2, nrow = 1)
 ```
 
+
+
+
 **Transformaciones**
 
 Dada la naturaleza de los datos económicos y financieros, donde el valor del dinero en el tiempo es cambiante, se llevaron las variables de costos, gastos, ingresos, PIB país, PIB sector construcción de edificaciones residenciales y no residenciales a precios constantes de 2019. Esta transformación permite hacer comparaciones sin el efecto inflacionario. Para esto, se consideró la inflación total de los años 2017, 2018 y 2019, y se aplicó la operación convencional de actualización.
 
-La segunda transformación que se aplicó, muy común en los trabajos econométricos, fue aplicar rezagos a las variables de tasa de intervención y tasa de desempleo. El sustento de esta transformación se fundamenta, por ejemplo, que las modifiaciones que realiza el Banco de la República a la tasa de intervención, solo se ven en el mercado, en promedio, después de transcurridos dos trimestres [^9], por lo que se decidió aplicarle un rezago de un año. 
+La segunda transformación que se aplicó, muy común en los trabajos econométricos, fue aplicar rezagos a las variables de tasa de intervención y tasa de desempleo. El sustento de esta transformación se fundamenta, por ejemplo, que las modificaciones que realiza el Banco de la República a la tasa de intervención, solo se ven en el mercado, en promedio, después de transcurridos dos trimestres [^9], por lo que se decidió aplicarle un rezago de un año. 
 
-En el caso de la tasa de desempleo, es un variable íntimamente ligada con las expectativas de consumo que se hacen para varios periodos hacia adelante, normalmente, un semestre o un año. Por lo que también se aplicó un rezago de un año.
+En el caso de la tasa de desempleo, es una variable íntimamente ligada con las expectativas de consumo que se hacen para varios periodos hacia adelante, normalmente, un semestre o un año. Por lo que también se aplicó un rezago de un año.
 
 [^9]: Banco de la República, 2017. Reportes del Emisor. Investigación e Información Económica. Transmisión de la tasa de interés de referencia a las tasas de interés del sistema financiero. Disponible en: https://publicaciones.banrepcultural.org/index.php/emisor/article/view/7953/8346 
 
@@ -255,7 +271,7 @@ bd_clean=mutate(bd_clean, factor3=1.1789,PIB_CONST_CTE=factor3*PIB_CONST)
 
 **Estabilización de varianza**
 
-Inicialmente, se considera como variable respuesta la relacionada con los costos y gastos de ventas. Se analiza gráficamente la estabilidad de su varianza
+Inicialmente, se considera como variable respuesta la relacionada con el total de costos y gastos de ventas. Se analiza gráficamente la estabilidad de su varianza
 
 ```{r}
 hist(bd_clean$TCyG_CTE, main  = "Total Costos y Gastos", 
@@ -268,7 +284,7 @@ CV<-sd(bd_clean$TCyG_CTE)/mean(bd_clean$TCyG_CTE)*100
 CV  
 ```
 
-Se evidencia que esta variable no es estable en varianza, esto al observar el histograma de los datos y al calcular el coeficiente de variación, donde se tiene que los datos tiene una desviación estandar del 233% el valor de la media, por ello se aplicó una transformación, que consistió en calcular la relación entre esta y los ingresos totales de cada empresa. Sin embargo, dado que esta relación podría generar valores ausentes o infinitos, se hace una limpieza para evitar la aparición de estos.
+Se evidencia que esta variable no es estable en varianza, esto al observar el histograma de los datos y al calcular el coeficiente de variación, donde se tiene que los datos tienen una desviación estándar del 233% el valor de la media, por ello se aplicó una transformación, que consistió en calcular la relación entre esta y los ingresos totales de cada empresa. Sin embargo, dado que esta relación podría generar valores ausentes o infinitos, se hace una limpieza para evitar la aparición de estos.
 
 ```{r}
 bd_clean$TCyG_CTE <- as.integer(bd_clean$TCyG_CTE)
@@ -445,7 +461,7 @@ train_set <- train_set %>% arrange(.folds)
 train_set
 ```
 
-Se aprecia que las categorias han quedado balanceadas en los grupos de entrenamiento
+Se aprecia que las categorías han quedado balanceadas en los grupos de entrenamiento
 ```{r}
 train_set %>% 
   count(Cat_prom_CSI) 
@@ -544,11 +560,10 @@ Consistió en ajustar un modelo con solo el intercepto por empresa.
 - Validación cruzada y el promedio de los errores cuadráticos medios. 
 
 ```{r}
-print("Modelo solo con intercepto")
-m0
+# Modelo solo con intercepto
+print(m0)
 r0 <- crossvalidate(train_set, k=4, model=m0, dependent='CSI_CTE', random=TRUE)
-r0
-
+print(r0)
 ```
 Se entrena el modelo con todo el conjunto de entrenamiento:
 
@@ -589,7 +604,7 @@ Modelo con intercepto aleatorio y Variación unidades aprobadas y variación PIB
 - Validación cruzada y el promedio de los errores cuadráticos medios. 
 
 ```{r}
-print("M1")
+print("Modelo 1")
 m1
 r1 <- crossvalidate(train_set, k=4, model=m1, dependent='CSI_CTE', random=TRUE)
 r1
@@ -638,7 +653,7 @@ Modelo con intercepto aleatorio y tasa de desempleo rezagada como efecto fijo. E
 - Validación cruzada y el promedio de los errores cuadráticos medios. 
 
 ```{r}
-print("M2")
+print("Modelo 2")
 m2
 r2 <- crossvalidate(train_set, k=4, model=m2, dependent='CSI_CTE', random=TRUE)
 r2
@@ -734,7 +749,7 @@ Modelo con intercepto aleatorio y Variación unidades aprobadas y Tasa de desemp
 - Validación cruzada y el promedio de los errores cuadráticos medios. 
 
 ```{r}
-print("M4")
+print("Modelo 4")
 m4
 r4 <- crossvalidate(train_set, k=4, model=m4, dependent='CSI_CTE', random=TRUE)
 r4
@@ -782,7 +797,7 @@ Modelo con intercepto y pendiente aleatoria, y variación del PIB de la construc
 - Validación cruzada y el promedio de los errores cuadráticos medios. 
 
 ```{r}
-print("M5")
+print("Modelo 5")
 m5
 r5 <- crossvalidate(train_set, k=4, model=m5, dependent='CSI_CTE', random=TRUE)
 r5
@@ -825,7 +840,7 @@ model_summary %>%
 
 Los modelos que presentan los mejores resultados en relación a menores valores AIC, el menor error cuadrático medio y el R2 condicional son el modelo 2 y 5.
 
-Puede observarse que para ambos modelos el R2 marginal donde se describe la proporción de varianza explicada por los factores fijos es bajo, siendo de un 2% para el modelo 2 y 52% para el modelo 5, y la métrica del r2 condicional que describe la proporción de la varianza explicada por los factores fijos y aleatorios es más alta para el modelo 5, lo que indica que este modelo captura  mas el comportamiento de los datos, la varianza explicada es del 80%.
+Puede observarse que para ambos modelos el R2 marginal donde se describe la proporción de varianza explicada por los factores fijos es bajo, siendo de un 2% para el modelo 2 y 52% para el modelo 5, y la métrica del r2 condicional que describe la proporción de la varianza explicada por los factores fijos y aleatorios es más alta para el modelo 5, lo que indica que este modelo captura  más el comportamiento de los datos, la varianza explicada es del 80%.
 
 Adicional, todos los modelos probados presentaron que la varianza del efecto aleatorio fue limitada, al estar muy cercana a cero, lo que indica que hay poca variación del tamaño del efecto en la variable respuesta.
 
@@ -870,7 +885,7 @@ Con los ANOVA podemos determinar que los modelos 2 y 5 son estadísticamente dif
 MAPE(pred2,obs)
 MAPE(pred5,obs)
 ```
-Se observa que ambos modelos tienen un buen nivel de prónostico, el error porcentual absoluto medio es bajo para ambos casos, destacando en especial el modelo 5. 
+Se observa que ambos modelos tienen un buen nivel de pronóstico, el error porcentual absoluto medio es bajo para ambos casos, destacando en especial el modelo 5. 
 
 ## **Interpretación de las variables** 
 *Modelo 2*
@@ -902,7 +917,6 @@ Además, en este modelo, los factores fijos explican cerca del 44% de la varianz
 - Conforme hemos avanzado en la obtención de conocimiento en los primeros dos semestres de la maestría antes de la asignatura de métodos estadísticos avanzados, nos encontramos con problemas en los cuales, si bien las fuentes de datos poseen una estructura multivariada, estas conservaban un solo nivel. Con los conocimientos vistos en esta materia, podemos encontrar datos agrupados en dos o más niveles, y relaciones con factores fijos y aleatorios. Esto nos lleva a interpretar modelos más complejos y resolver preguntas más sofisticadas. Además de que estos modelos son flexibles en relación con los supuestos básicos de normalidad de los residuos.
 
 - Con los modelos desarrollados se logró encontrar como algunas variables macroeconómicas explican parte de la variabilidad de los costos y gastos sobre los ingresos de las empresas. 
-a
 
 - En los modelos que obtuvieron el mejor ajuste (el 2 y el 5), se observa como la variable respuesta (costos y gatos/ingresos) estuvo explicada por la tasa de desempleo (con rezago) y la variación del PIB del sector construcción para edificaciones residenciales y no residenciales. Variables que desde la teoría económica están estrechamente ligadas a la evolución de la variable respuesta, especialmente, desde un enfoque de demanda y su incidencia directa sobre los ingresos. Finalmente, se logró con el modelo 5, que los factores fijos y aleatorios, explicaran el 70% de la varianza.
 
@@ -917,7 +931,7 @@ a
 
 ## **Repositorio**
 
-El cógigo del proyecto se puede encontrar [aqui](https://github.com/SusanaLondono/MEA_20202_DDDCS).
+El código del proyecto se puede encontrar [aqui](https://github.com/SusanaLondono/MEA_20202_DDDCS).
 
 ## **Referencias**
 
