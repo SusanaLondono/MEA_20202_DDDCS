@@ -926,8 +926,8 @@ Además, en este modelo, los factores fijos explican cerca del 44% de la varianz
 |----------------------------------------------------|------------|
 |Consolidación de información                        |     15%    |
 |Transformación de variables y análisis descriptivo  |     35%    |
-|Ajuste y validación de modelos                      |     40%    |
-|Redacción del reporte                               |     10%    |	
+|Ajuste y validación de modelos                      |     35%    |
+|Redacción del reporte                               |     15%    |	
 
 ## **Repositorio**
 
