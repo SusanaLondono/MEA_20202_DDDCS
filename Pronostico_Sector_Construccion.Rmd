@@ -915,7 +915,9 @@ a
 |Ajuste y validación de modelos                      |     40%    |
 |Redacción del reporte                               |     10%    |	
 
+## **Repositorio**
 
+El cógigo del proyecto se puede encontrar [aqui](https://github.com/SusanaLondono/MEA_20202_DDDCS).
 
 ## **Referencias**
 
