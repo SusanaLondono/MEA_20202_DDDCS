@@ -1,0 +1,921 @@
+---
+title: "**Actividad de evaluación de la asignatura Métodos Estadísticos Avanzados**"
+subtitle: "*Profesor: Juan David Ospina Arango*"
+author: "Catalina Piedrahita Jaramillo, Susana Londoño Muñoz, David Betancur Londoño, Diego Jaramillo Zapata y Diego Valderrama Laverde"
+output: html_document
+---
+
+## **Entendimiento del problema** 
+
+Para el presente trabajo, se seleccionó dentro de la sección económica de la *Construcción* las clases F4111 - Construcción de edificios residenciales y F4112 - Construcción de edificios no residenciales. Es importante considerar que el sector de la construcción representa cerca del 6% del PIB de Colombia, donde las clases seleccionadas concentran aproximadamente el 48% del PIB del sector[^1]. Se resalta que si bien, el sector de la construcción no tiene una participación alta en torno al PIB, es un sector clave en términos de los encadenamientos productivos que posibilita, al ser un gran demandante de factores productivos (p.e: cemento, hierro, transporte, artículos para el hogar, entre otros) y un gran dinamizador del mercado laboral. Además, es un sector clave en términos de desarrollo económico y social, por un lado, es un medio para generar desarrollo urbano y, por otro, propiciar soluciones habitacionales que redunden en un mayor bienestar para la población. Su evolución está ligada a condiciones de demanda agregada, asociadas con la disponibilidad de pago de las personas (ejemplo: empleo, niveles salariales, inflación), el costo de oportunidad del dinero (tasa de interés), entre otros. A su vez, el sector, a nivel de oferta, está influenciado por el comportamiento de sus índices de costos, la dinámica de la inversión privada y pública, las condiciones favorables de la economía, restricciones normativas, entre otros.
+
+Bajo este contexto, el objetivo de este trabajo es caracterizar las relaciones, que desde la teoría económica, se pueden plantear entre estos indicadores agregados y los costos y gastos de ventas de las empresas colombianas vigiladas por la SuperSociedades y que se clasifican en las clases enunciadas anteriormente.
+
+Parte de la metodología aplicada en este trabajo, se basó en los pasos sugeridos por Correa y Salazar (2016) [^2]. 
+ 
+ [^1]: Departamento Administrativo Nacional de Estadística, 2020. Cuentas nacionales. Producto Interno Bruto - PIB Base 2015. Disponible en: https://www.dane.gov.co/index.php/estadisticas-por-tema/cuentas-nacionales/cuentas-nacionales-trimestrales
+ 
+ [^2]: Correa, J.C, & Salazar, J.C, 2016. Introducción a los modelos mixtos. Disponible en: http://www.bdigital.unal.edu.co/57330/1/introduccionalosmodelosmixtos.2016.pdf
+
+```{r setup, include=FALSE}
+# Se cargan las librerías necesarias para el desarrollo del trabajo
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(readxl)
+library(caret)
+library("heatmaply")
+library(datos)
+library(tidyverse)
+library(clusterSim)
+library(lme4)
+library(nlme)
+library(ggplot2)
+library(groupdata2)
+library(knitr) # kable()
+library(broom) #tidy()
+library(hydroGOF) # rmse()
+library(kableExtra)
+library(ggpubr)
+library(MLmetrics)
+```
+
+```{r}
+# La semilla aleatoria:
+set.seed(20201018)
+# Ruta para los diferentes usuarios:
+pc_david <- "C:/Users/Carolina/Desktop/Base de datos.xlsx"
+pc_su <- "C:/Users/sulon/OneDrive - Universidad EAFIT/MEA_actividad_evaluativa/curated/Base de datos.xlsx"
+pc_valde ="D:/OneDrive - Grupo EPM/Diego_Valderrama/Personal/EAFIT/2020 - II/4. Métodos Estadisticos Avanzados/Trabajo Final/Base de datos.xlsx"
+pc_jara <- "C:/Users/djaramiz/Universidad EAFIT/Susana Londoño Muñoz - MEA_actividad_evaluativa/curated/Base de datos.xlsx"
+pc_cata<-"C:/Users/ASUS/Universidad EAFIT/Susana Londoño Muñoz - MEA_actividad_evaluativa/curated/Base de datos.xlsx"
+
+```
+
+## **Datos seleccionados y fuentes**
+
+#### **Datos de costos y gastos de las empresas clasificadas en F4111 - Construcción de edificios residenciales y F4112 - Construcción de edificios no residenciales**
+
+Para la consecución de estos datos se utilizó como fuente la Superintendencia de Sociedades, accediendo a la base de datos de estados financieros para los años 2016, 2017, 2018 y 2019. Donde se seleccionaron las plenas [^3].
+
+[^3]: Superintendencia de Sociedades, 2020. Sistema Integrado de Información Societaria. Disponible en: https://siis.ia.supersociedades.gov.co/
+
+#### **Indicadores macroeconómicos**
+Se consolidaron a nivel del total Colombia, para los años 2016, 2017, 2018 y 2019.
+La principal fuente de información fue el Departamento Administrativo Nacional de Estadística- Dane, utilizando las siguientes categorías:
+
+Cuentas nacionales: Producto Interno Bruto - Total y desagregado por sección económica y clase (Construcción de edificaciones residenciales y no residenciales). Valor absoluto constante y variación real (total año)[^4].
+
+Mercado laboral: Tasa de desempleo (promedio año) - Gran Encuesta Integrada de Hogares [^5].
+
+Construcción: índice de costos y precios; licencias de construcción; unidades habitacionales en construcción; cemento gris; concreto [^6].
+
+Precios y costos: índice de precio al consumidor e índice de precio al productor (variación interanual)[^7].
+
+Para el caso de la tasa de interés de intervención y la tasa representativa de mercado la fuente oficial fue el Banco de la República. En estos casos se hizo el cálculo del promedio anual. De igual forma, el Banco de la República fue la fuente para los montos totales año del balance de cuenta corriente y el balance fiscal[^8].
+
+Esta información, a nivel *crudo*, se consolidó en un archivo en Excel, que posteriormente se leyó en R.
+
+[^4]: Departamento Administrativo Nacional de Estadística, 2020. Cuentas nacionales. Producto Interno Bruto - PIB Base 2015. Anexos estadísticos PIB producción. Disponible en:https://www.dane.gov.co/index.php/estadisticas-por-tema/cuentas-nacionales/cuentas-nacionales-trimestrales/historicos-producto-interno-bruto-pib 
+
+[^5]: Departamento Administrativo Nacional de Estadística, 2020. Mercado laboral. Gran Encuesta Integrada de Hogares -GEIH. Anexos. Disponible en: https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/empleo-y-desempleo
+
+[^6]: Departamento Administrativo Nacional de Estadística, 2020. Construcción. Disponible en: https://www.dane.gov.co/index.php/estadisticas-por-tema/construccion
+
+[^7]: Departamento Administrativo Nacional de Estadística, 2020. Precios y costos. Disponible en: https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos
+
+[^8]: Banco de la República, 2020. Estadísticas. Disponible en: https://www.banrep.gov.co/es/-estadisticas
+
+
+```{r}
+# Se leen los datos:
+bd_clean <- read_excel(pc_su, 
+    col_types = c("text", "text", "text", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric"))
+```
+
+```{r}
+#Diccionario de las variables
+Nombre_Variable_base_de_datos <-c("Anio", "Nit", "Tot_CyG", "Tot_Ingresos", "PIB", "Cta_corr", "TRM", "T_interv", "T_Desemp", "Inflacion", "Bal_Fcal", "ICCV_var_tot", "ICCV_Mat", "ICCV_manobra", "ICCV_maq_eq", "ICCV_unifam", "ICCV_multifam", "IPP", "IPP_Mat", "IPVN_casa_nueva", "IPVN_tot_nal", "IPVU", "Cem_pro", "Cem_des", "Conc_pro", "PIB_CONS_ERNR", "VAR_PIB_CONS_ERNR", "Area_ap_viv", "Var_Area_ap_viv", "Unid_aprob", "Var_unid_aprob", "Var_IPVN")
+
+Significado <-c("Año", "Nit", "Total Costos y Gastos", "Total Ingresos", "Producto Interno Bruto", "Cuenta corriente en Millones en USD", "Tasa Representativa del Mercado", "Tasa de Intervención", "Tasa de Desempleo", "Inflación", "Balance Fiscal Miles de Millones COP", "Índice de Costos de la Construcción de Vivienda Variación Total", "Índice de Costos de la Construcción de Vivienda Materiales", "Índice de Costos de la Construcción de Vivienda Mano de Obra", "Índice de Costos de la Construcción de Vivienda Maquinaria y Equipo", "Índice de Costos de la Construcción de Vivienda Unifamiliar", "Índice de Costos de la Construcción de Vivienda Multifamiliar", "Índice de Precios del Productor Total", "Índice de Precios del Productor Materiales", "Índice de Precios de Vivienda Casas", "Índice de Precios de Vivienda Nueva Total Nacional", "Índice de Precios de Vivienda Usada", "Cemento producido Toneladas", "Cemento despechado Toneladas", "Concreto producido Toneladas", "PIB actividad constructiva edificadora residencial y no residencial", "Variación PIB actividad constructiva edificadora residencial y no residencial", "Área aprobada de vivienda metros cuadrados", "Variación Área aprobada de vivienda metros cuadrados", "Unidades aprobadas", "Variación unidades aprobadas", "Variación Índice de Precios de Vivienda Nueva")
+
+Diccionario <-data.frame(Nombre_Variable_base_de_datos, Significado)
+
+Diccionario %>% kbl(row.names = FALSE) %>% kable_styling()
+```
+
+## **Análisis preliminar, transformaciones y creación de nuevas variables**
+
+**Análisis preliminar**
+
+```{r}
+vars_me <- c("Anio", "PIB","Cta_corr","TRM","T_interv","T_Desemp","Inflacion", "Bal_Fcal", "ICCV_var_tot",
+             "ICCV_Mat", "ICCV_manobra", "ICCV_maq_eq","ICCV_unifam", "ICCV_multifam","IPP",
+             "IPP_Mat", "IPVN_ciudad", "IPVN_casa_nueva", "IPVN_tot_nal", "IPVU", "Cem_pro", "Cem_des", 
+             "Conc_pro", "PIB_CONS_ERNR", "VAR_PIB_CONS_ERNR", "Area_ap_viv", "Var_Area_ap_viv", 
+             "Unid_aprob", "Var_unid_aprob", "Var_IPVN")
+
+df_var_me <- unique(bd_clean[,vars_me]) # Dataset de variables MACROECONOMICAS
+
+df_vars <- bd_clean[ , -which(names(bd_clean) %in% vars_me)] # Dataset con variables de las empresas.
+  
+```
+
+*Variables macroeconómicas*
+
+```{r include=FALSE}
+# "PIB","PIB_CONS_ERNR", "VAR_PIB_CONS_ERNR"
+# "TRM","T_interv","T_Desemp","Inflacion",
+#  "Bal_Fcal", "Cta_corr"
+
+pib_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = PIB)) +
+  ggtitle("PIB") +
+  ylab("Millones COP") + xlab("Año")
+  
+pibc_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = PIB_CONS_ERNR)) +
+  ggtitle("PIB Construcción R y NR") +
+  ylab("Millones COP") + xlab("Año")
+
+pibvc_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = VAR_PIB_CONS_ERNR)) +
+  ggtitle("Variación PIB Cons. R y NR") +
+  ylab("%") + xlab("Año")
+
+trm_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = TRM))+
+  ggtitle("TRM") +
+  ylab("COP") + xlab("Año")
+
+ti_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = T_interv))+
+  ggtitle("Tasa intervención") +
+  ylab("%") + xlab("Año")
+
+td_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = T_Desemp))+
+  ggtitle("Tasa de desempleo") +
+  ylab("%") + xlab("Año")
+
+i_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = Inflacion))+
+  ggtitle("Inflación") +
+  ylab("%") + xlab("Año")
+
+var_und_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = Var_unid_aprob))+
+  ggtitle("Variación Unidades aprobadas") +
+  ylab("%") + xlab("Año")
+
+cc_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = Cta_corr)) +
+  ggtitle("Balance cuenta corriente") +
+  ylab("Millones de USD") + xlab("Año")
+
+bf_pl <- ggplot(bd_clean) +
+  geom_point(aes(x = Anio, y = Bal_Fcal)) +
+  ggtitle("Balance Fiscal") +
+  ylab("Miles de Millones de COP") + xlab("Año")
+
+```
+
+
+```{r}
+ggarrange(pib_pl, pibc_pl, pibvc_pl, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2)
+
+```
+De acuerdo con las gráficas presentadas anteriormente, se puede observar en el panel A que el PIB viene en incremento desde el 2016, en relación al PIB constructivo de edificaciones residenciales y no residenciales, se puede determinar que ha disminuido desde 2016 (panel B), con la mayor disminución entre 2018 y 2019 como se observa en el panel C. 
+
+```{r}
+ggarrange(trm_pl, ti_pl, td_pl, i_pl, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2)
+
+```
+Esta gráfica nos muestra en el panel A el promedio de la tasa representativa del mercado (TRM) de 2016 a 2019, se puede observar un gran crecimiento en el último año. En el panel B y el D se puede observar la tasa de intervención y la inflación de manera respectiva, en estos se puede ver una pendiente negativa, lo que implica que ambos han disminuido. En el panel C se muestra el incremento de un 1% de la tasa de desempleo en los años estudiados. 
+
+```{r}
+var_und_pl
+```
+
+
+```{r}
+ggarrange(cc_pl, bf_pl, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 1)
+```
+
+**Transformaciones**
+
+Dada la naturaleza de los datos económicos y financieros, donde el valor del dinero en el tiempo es cambiante, se llevaron las variables de costos, gastos, ingresos, PIB país, PIB sector construcción de edificaciones residenciales y no residenciales a precios constantes de 2019. Esta transformación permite hacer comparaciones sin el efecto inflacionario. Para esto, se consideró la inflación total de los años 2017, 2018 y 2019, y se aplicó la operación convencional de actualización.
+
+La segunda transformación que se aplicó, muy común en los trabajos econométricos, fue aplicar rezagos a las variables de tasa de intervención y tasa de desempleo. El sustento de esta transformación se fundamenta, por ejemplo, que las modifiaciones que realiza el Banco de la República a la tasa de intervención, solo se ven en el mercado, en promedio, después de transcurridos dos trimestres [^9], por lo que se decidió aplicarle un rezago de un año. 
+
+En el caso de la tasa de desempleo, es un variable íntimamente ligada con las expectativas de consumo que se hacen para varios periodos hacia adelante, normalmente, un semestre o un año. Por lo que también se aplicó un rezago de un año.
+
+[^9]: Banco de la República, 2017. Reportes del Emisor. Investigación e Información Económica. Transmisión de la tasa de interés de referencia a las tasas de interés del sistema financiero. Disponible en: https://publicaciones.banrepcultural.org/index.php/emisor/article/view/7953/8346 
+
+
+```{r}
+#Creación de columna de factor para llevar a pesos constantes de 2019
+bd_clean=mutate(bd_clean, factor1 = ifelse(Anio == 2019, 1,ifelse(Anio==2018, 1.0380,ifelse(Anio==2017,1.0710, 1.1148))))
+
+#Aplicando un rezago de un año a la tasa de intervención
+bd_clean=mutate(bd_clean, Tasai_Rez = ifelse(Anio == 2019, 0.0435,ifelse(Anio==2018, 0.0613,ifelse(Anio==2017,0.071, 0.0467))))
+
+#Aplicando un rezago de un año a la tasa de desempleo
+bd_clean=mutate(bd_clean, Tasad_Rez = ifelse(Anio == 2019, 0.0968,ifelse(Anio==2018, 0.0938,ifelse(Anio==2017,0.0922, 0.0893))))
+
+#bd_clean <- data.frame(apply(bd_clean, 2, function(x) as.numeric(as.character(x))))
+
+#Calculando variables a pesos constantes de 2019
+bd_clean=mutate(bd_clean, TCyG_CTE=Tot_CyG*factor1,TIng_CTE=Tot_Ingresos*factor1,factor2=1.1789,PIB_CTE=factor2*PIB)
+
+# Agregando el PIB Construcción de edificaciones residenciales y no residenciales
+bd_clean=mutate(bd_clean, PIB_CONST = ifelse(Anio == 2019, 57509.4,ifelse(Anio==2018,58654,ifelse(Anio==2017,58907, 60125))))
+
+bd_clean=mutate(bd_clean, factor3=1.1789,PIB_CONST_CTE=factor3*PIB_CONST)
+```
+
+**Estabilización de varianza**
+
+Inicialmente, se considera como variable respuesta la relacionada con los costos y gastos de ventas. Se analiza gráficamente la estabilidad de su varianza
+
+```{r}
+hist(bd_clean$TCyG_CTE, main  = "Total Costos y Gastos", 
+     xlab = "Total costos y gastos", ylab = "Frecuencia", las = 1)
+```
+
+
+```{r}
+CV<-sd(bd_clean$TCyG_CTE)/mean(bd_clean$TCyG_CTE)*100
+CV  
+```
+
+Se evidencia que esta variable no es estable en varianza, esto al observar el histograma de los datos y al calcular el coeficiente de variación, donde se tiene que los datos tiene una desviación estandar del 233% el valor de la media, por ello se aplicó una transformación, que consistió en calcular la relación entre esta y los ingresos totales de cada empresa. Sin embargo, dado que esta relación podría generar valores ausentes o infinitos, se hace una limpieza para evitar la aparición de estos.
+
+```{r}
+bd_clean$TCyG_CTE <- as.integer(bd_clean$TCyG_CTE)
+bd_clean$TIng_CTE <- as.integer(bd_clean$TIng_CTE)
+
+# Quitar TCyG_CTE y TIng_CTE = 0
+
+bd_clean <- bd_clean[bd_clean$TCyG_CTE != 0,]
+bd_clean <- bd_clean[bd_clean$TIng_CTE != 0,]
+
+#summary(bd_clean$TCyG_CTE)
+
+bd_clean <- transform(bd_clean, CSI_CTE = TCyG_CTE / TIng_CTE)
+
+```
+
+A continuación, se grafica un boxplot de la nueva variable respuesta, costos sobre ingresos (CSI), para identificar si la varianza fue estabilizada.
+
+```{r}
+bp <- boxplot((bd_clean$CSI_CTE), las= 1, main = c("Costos sobre ingresos (CS)", "Con outliers"))
+```
+
+```{r}
+print('estadisticas del Boxplot')
+bp$stats
+```
+
+A partir de la gráfica se identificaron puntos extremos, a gran distancia del grueso del conjunto de datos, por lo que se removieron del dataset.
+
+```{r}
+# Se retiran los valores que están por fuera de los bigotes del boxplot anterior. 
+bd_clean<-mutate(bd_clean, IndexOut=(bd_clean$CSI_CTE>=bp$stats[1] & bd_clean$CSI_CTE<=bp$stats[5]))
+bd_clean<-bd_clean[bd_clean$IndexOut!="FALSE",]
+boxplot((bd_clean$CSI_CTE), las= 1, main = c("Costos sobre ingresos", "Sin valores extremos"))
+```
+
+Se evidencia como con esta remoción, si bien aparecen puntos atípicos, no son tan distantes como los anteriores. Destacando, además, que los modelos mixtos mitigan los efectos dados por los puntos atípicos.
+
+Se grafica de nuevo el histograma de la variable respuesta para ver su dispersión y se calcula el coeficiente de variación.
+
+```{r}
+par(mfrow=c(1,2))
+hist(bd_clean$TCyG_CTE, main  = "Total Costos y Gastos", 
+     xlab = "Total costos y gastos", ylab = "Frecuencia", las = 1)
+
+hist(bd_clean$CSI_CTE, main  = "Costos totales sobre ingresos (CSI)",
+     xlab = "Costos totales sobre ingresos (CSI)", ylab = "Frecuencia", las = 1)
+
+```
+
+```{r}
+CV<-sd(bd_clean$CSI_CTE)/mean(bd_clean$CSI_CTE)*100
+CV 
+```
+
+Ahora que se ha estabilizado la varianza de la variable respuesta con la transformación total de costos y gastos sobre ingresos, y al retirar puntos que eran demasiado extremos, se tiene ahora un menor coeficiente de variación, 10.4%.
+
+```{r}
+summary(bd_clean$CSI_CTE)
+```
+
+Para los análisis posteriores, se conservaron solo una parte de las variables, omitiendo las variables intermedias, tales como los factores de cambio a precios constantes y otras que se sumaron para llegar a las variables finales. 
+ 
+```{r}
+cols_to_keep <- c("Anio","Nit","CIIU","Cta_corr","TRM","T_interv","T_Desemp",
+                  "Inflacion","Bal_Fcal","ICCV_var_tot","ICCV_Mat", "ICCV_manobra",
+                  "ICCV_maq_eq", "ICCV_unifam", "ICCV_multifam", "IPP", "IPP_Mat", 
+                  "IPVN_ciudad", "IPVN_casa_nueva", "IPVN_tot_nal", "IPVU", 
+                  "PIB_CONS_ERNR", "VAR_PIB_CONS_ERNR", "Var_Area_ap_viv", 
+                  "Unid_aprob", "Var_unid_aprob", "Var_IPVN", "Tasai_Rez", 
+                  "Tasad_Rez", "TCyG_CTE", "TIng_CTE", "PIB_CTE", "PIB_CONST", 
+                  "PIB_CONST_CTE", "CSI_CTE")
+
+bd_clean <- bd_clean[, cols_to_keep]
+
+```
+
+
+**Creación de nuevas variables**
+
+A partir de los valores obtenidos de la variable respuesta (CSI), se tomó el valor promedio para cada empresa, y considerando la distribución de los valores, se identificaron los  cuartiles, categorizando cada empresa de la siguiente manera: tipo 1, aquellas cuyo promedio de la variable respuesta estuviese por debajo del primer cuartil; tipo 2, entre el primero y segundo cuartil; tipo 3, entre el segundo y tercer cuartil; y tipo 4 mayores al tercer cuartil. Esta categorización nos permitirá aplicar con mayor facilidad la teoría de los modelos mixtos, además, de explorar nuevas asociaciones lineales con las variables macroeconómicas.
+
+```{r}
+#Categorización de las empresas según cuartiles de CSI
+nit_csi <- bd_clean[,c('Nit', 'CSI_CTE')]
+media <- aggregate(. ~ Nit, data=nit_csi, mean)
+colnames(media)[2] <- "PromCSI_CTE"
+
+media <- mutate(media, Cat_prom_CSI = ifelse(media$PromCSI_CTE <= quantile(media$PromCSI_CTE, 0.25, na.rm = FALSE), '1',ifelse(media$PromCSI_CTE <= quantile(media$PromCSI_CTE, 0.50, na.rm = FALSE),'2', ifelse(media$PromCSI_CTE <= quantile(media$PromCSI_CTE, 0.75, na.rm = FALSE),'3','4'))))
+bd_clean <- (merge(media, bd_clean, by = 'Nit'))
+
+```
+
+Asimismo, se realizó el gráfico de interacción, donde se observa el comportamiento de cada tipo de empresa frente a la variable respuesta (CSI) en cada uno de los años. Observándose para cada tipo de empresa, una marcada diferencia frente a la variable respuesta, y fuertemente asociado con la categorización por cuartiles que se aplicó. Dando evidencia para aplicar un modelo mixto con intercepto aleatorio.
+
+```{r}
+#Media de CSI
+d_byCat = na.omit(bd_clean) %>%
+  group_by(Cat_prom_CSI, Anio) %>%
+  summarise(CSI_CTE = mean(CSI_CTE))
+
+ggplot(d_byCat, aes(x=Anio, y=CSI_CTE, 
+              colour=Cat_prom_CSI, group=Cat_prom_CSI)) +
+    geom_line(size=1) + geom_point(size=3, shape=21, fill="white") +
+    ggtitle("Gráfica de interacción") +
+    labs(x= "Año", y="CSI")
+  
+```
+
+```{r}
+boxplot((bd_clean$CSI_CTE~bd_clean$Anio), las= 1, main = c("Costos sobre ingresos por año"), ylab = "CSI", xlab = "Año")
+```
+
+En el boxplot anterior, se observa como el valor central, representado por la mediana, sigue una tendencia creciente a partir del año 2018. De igual forma, se reduce el rango intercuartílico. 
+
+A continuación, se obtiene una muestra de los datos, para representar el comportamiento de la variable respuesta en algunas empresas.
+
+```{r}
+# Se eliminan las empresas que no tienen información para los cuatro años.
+muestra<-bd_clean
+datos_agrup_nit <- bd_clean %>% count(bd_clean$Nit)
+nits_todos_annos <- datos_agrup_nit[datos_agrup_nit$n == 4,]
+solo_nits <- nits_todos_annos$`bd_clean$Nit`
+muestra <- bd_clean[bd_clean$Nit %in% solo_nits,]
+
+# Ordenamiento del dataset en año (Ascendet) y Nit(Descendente)
+muestra <- muestra[order(muestra$Anio, decreasing = FALSE),] # Ordenar Año 
+muestra <- muestra[order(muestra$Nit, decreasing = TRUE),] # Ordenar por Nit
+
+
+# Grafica de variacion de costos por años en puntos
+ ni<-4
+ G <- length(muestra$Nit)/ni
+ grupo <- factor(rep(x=1:G, each=ni))
+
+ggplot(data = muestra, # Tome los primeros 120 registros -> aprox. 30 nits.
+ aes(x = as.factor(Anio) , y = CSI_CTE, color = grupo)) + geom_point() + theme_bw() + facet_wrap(~ Nit) +
+ theme(legend.position = "none") +
+ labs(title = "Muestra CSI")+
+ xlab("Años") +
+ ylab("Costos")
+```
+
+En este gráfico se observa que los interceptos varían según los individuos. Sin embargo, se observan tipos de pendientes, lo que muestran la importancia y la necesidad de clasificar la variable respuesta.
+
+
+
+## **Modelación y pruebas de ajuste**
+
+**Validación cruzada**
+Se realizará validación cruzada para comparar los modelos y sus ajustes, para ello el conjunto de datos se dividió en 15% para test y 85% para entrenamiento.
+```{r}
+# Se ponen las variables Nit y Cat_prom_CSI como tipo factor
+bd_clean$Nit <- as.factor(bd_clean$Nit)
+bd_clean$Cat_prom_CSI <- as.factor(bd_clean$Cat_prom_CSI)
+
+# Se parten los datos en 15% de test y 85% de entrenamiento.
+parts <- partition(bd_clean, p = 0.15, id_col = "Nit", cat_col = 'Cat_prom_CSI') 
+
+test_set <- parts[[1]]
+train_set <- parts[[2]]
+
+test_set
+```
+
+```{r}
+# se agrega una columna con un número de 1 a k que será al grupo que pertenece 
+# para hacer la validación cruzada. 
+train_set <- fold(train_set, k = 4, cat_col = 'Cat_prom_CSI', id_col = 'Nit')
+
+# Organizar por folds. 
+train_set <- train_set %>% arrange(.folds)
+
+train_set
+```
+
+Se aprecia que las categorias han quedado balanceadas en los grupos de entrenamiento
+```{r}
+train_set %>% 
+  count(Cat_prom_CSI) 
+```
+
+Función de la validación cruzada. 
+
+```{r}
+
+crossvalidate <- function(data, k, model, dependent, random = FALSE){
+  # 'data' is the training set with the ".folds" column
+  # 'k' is the number of folds we have
+  # 'model' is a string describing a linear regression model formula
+  # 'dependent' is a string with the name of the score column we want to predict
+  # 'random' is a logical; do we have random effects in the model?
+  
+  # Initialize empty list for recording performances
+  performances <- c()
+  
+  # One iteration per fold
+  for (fold in 1:k){
+    
+    # Create training set for this iteration
+    # Subset all the datapoints where .folds does not match the current fold
+    training_set <- data[data$.folds != fold,]
+    
+    # Create test set for this iteration
+    # Subset all the datapoints where .folds matches the current fold
+    testing_set <- data[data$.folds == fold,]
+    
+    ## Train model
+
+    # If there is a random effect,
+    # use lmer() to train model
+    # else use lm()
+
+    if (isTRUE(random)){
+
+      # Train linear mixed effects model on training set
+      model <- lmer(model, training_set, REML=FALSE)
+
+    } else {
+
+      # Train linear model on training set
+      model <- lm(model, training_set)
+
+    }
+
+    ## Test model
+
+    # Predict the dependent variable in the testing_set with the trained model
+    predicted <- predict(model, testing_set, allow.new.levels=TRUE)
+
+    # Get the Root Mean Square Error between the predicted and the observed
+    MSE <- mse(predicted, testing_set[[dependent]])
+    # Add the RMSE to the performance list
+    performances[fold] <- MSE
+
+  }
+
+  # Return the mean of the recorded RMSEs
+  return(c('MSE' = mean(performances)))
+         
+
+}
+
+```
+
+Se probaron diferentes modelos mixtos, que permitiesen explicar la variable respuesta en función de las variables e indicadores macroeconómicos, y considerando estas como los efectos fijos a modelar. A continuación, se presentan algunos de los modelos probados y sus resultados, que incluyen significancia de parámetros, criterios de información, el valor del error cuadrático medio y las pruebas de ajuste (R2 marginal y R2 condicional) [^10]. Para finalmente, hacer un zoom en los modelos que presentarón los mejores resultados.
+
+[^10]: Nakagawa, S. & Schielzeth, H. A general and simple method for obtaining R2fromgeneralized linear mixed-effects models. Disponible en: https://besjournals.onlinelibrary.wiley.com/doi/epdf/10.1111/j.2041-210x.2012.00261.x 
+
+
+```{r}
+# Se definieron los siguientes modelos: 
+m0 <- 'CSI_CTE ~ (1 | Nit)' 
+m1 <- 'CSI_CTE ~ Var_unid_aprob+VAR_PIB_CONS_ERNR+(1|Nit)'
+m2 <- 'CSI_CTE ~ Tasad_Rez+(1|Nit)'
+m3 <- 'CSI_CTE ~ Var_unid_aprob+(1|Nit)'
+m4 <- 'CSI_CTE ~ Tasad_Rez+VAR_PIB_CONS_ERNR+(1|Nit)'
+m5 <- 'CSI_CTE ~ VAR_PIB_CONS_ERNR+Cat_prom_CSI+(Anio|Cat_prom_CSI)'
+
+```
+
+```{r}
+# Se creó un dataframe para que contenga el resumen de los modelos:
+model_summary <-data.frame(modelo=character(0), formula=character(0), mse_valcruz=double(0), r2m_ent= double(0), r2c_ent = double(0), mse_po = double(0), aic= double(0))
+
+nombre_cols <- c("Modelo", "Formula", "MSE_validacion_cruzada","r2m_ent", "r2c_ent" , "mse_pred_obs", "AIC") 
+```
+
+### **Modelo 0**
+
+Consistió en ajustar un modelo con solo el intercepto por empresa.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("Modelo solo con intercepto")
+m0
+r0 <- crossvalidate(train_set, k=4, model=m0, dependent='CSI_CTE', random=TRUE)
+r0
+
+```
+Se entrena el modelo con todo el conjunto de entrenamiento:
+
+```{r}
+res0 = lmer(m0, data = train_set)
+summary(res0)
+```
+
+- Validación del modelo 0:
+
+```{r}
+# R2
+r20 <- MuMIn::r.squaredGLMM(res0)
+# AIC
+aic0 <- AIC(res0)
+# Predicción y MSE
+pred0 <-  predict(res0, test_set, allow.new.levels=TRUE)
+MSE_po0 <- mse(pred0, test_set[['CSI_CTE']])
+
+```
+
+
+```{r}
+m0_sum <- data.frame("Modelo 0", m0, r0, round(r20[1],3),round(r20[2],3), round(MSE_po0, 3), round(aic0,3))      
+names(m0_sum) <- nombre_cols
+model_summary <- rbind(model_summary, m0_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+
+### **Modelo 1**
+
+Modelo con intercepto aleatorio y Variación unidades aprobadas y variación PIB construcción edificaciones residenciales y no residenciales como efectos fijos. Parte del supuesto de que la variable respuesta está altamente relacionada con la evolución del agregado económico de las clases seleccionadas y, que además, las unidades aprobadas pueden llegar a tener una relación positiva con los costos, sin embargo, el tema temporal entre aprobación y ejecución, podría disminuir su capacidad explicativa.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("M1")
+m1
+r1 <- crossvalidate(train_set, k=4, model=m1, dependent='CSI_CTE', random=TRUE)
+r1
+```
+
+- Entrenando el modelo con todo el conjunto de entrenamiento:
+
+```{r}
+res1 = lmer(m1, data = train_set)
+summary(res1)
+```
+
+- R2
+
+```{r}
+r21 <- MuMIn::r.squaredGLMM(res1)
+aic1 <- AIC(res1)
+pred1 <-  predict(res1, test_set, allow.new.levels=TRUE)
+
+# Get the Root Mean Square Error between the predicted and the observed
+MSE_po1 <- mse(pred1, test_set[['CSI_CTE']])
+
+```
+
+```{r}
+
+m1_sum <- data.frame("Modelo 1", m1, r1, r21[1], r21[2], MSE_po1, aic1)      
+  
+#Naming the Data Frame - Step 2  
+#"modelo", "formula", "mse_valcruz", "r2_entrenamiento" , "mse_po", "aic")
+names(m1_sum) <-nombre_cols
+  
+#Using rbind() function to insert above observation  
+model_summary <- rbind(model_summary, m1_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+
+### **Modelo 2**
+
+Modelo con intercepto aleatorio y tasa de desempleo rezagada como efecto fijo. En este caso, la modelación parte de que un bajo nivel de desempleo podría llevar al siguiente año a una mejoría de las expectativas económicas y, por ende, un mejor comportamiento de la demanda, y por consiguiente ser un dinamizador de oferta.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("M2")
+m2
+r2 <- crossvalidate(train_set, k=4, model=m2, dependent='CSI_CTE', random=TRUE)
+r2
+```
+- Ajustando el modelo con todo el conjunto de entrenamiento:
+
+```{r}
+res2 = lmer(m2, data = train_set)
+summary(res2)
+```
+
+- R2 del modelo 2
+
+```{r}
+r22 <- MuMIn::r.squaredGLMM(res2)
+aic2 <- AIC(res2)
+pred2 <-  predict(res2, test_set, allow.new.levels=TRUE)
+
+# Get the Root Mean Square Error between the predicted and the observed
+MSE_po2 <- mse(pred2, test_set[['CSI_CTE']])
+
+```
+
+
+```{r}
+   
+m2_sum <- data.frame("Modelo 2", m2, r2,r22[1], r22[2], MSE_po2, aic2)      
+  
+#Naming the Data Frame - Step 2  
+#"modelo", "formula", "mse_valcruz", "r2_entrenamiento" , "mse_po", "aic")
+names(m2_sum) <- nombre_cols 
+  
+#Using rbind() function to insert above observation  
+model_summary <- rbind(model_summary, m2_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+### **Modelo 3**
+
+Modelo con intercepto aleatorio por Nit y Variación unidades aprobadas como efecto fijo. En este caso, solo se modela frente a la variación de unidades aprobadas, entendiendo esta variable como impulsora de costos del sector.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("Modelo 3")
+m3
+r3 <- crossvalidate(train_set, k=4, model=m3, dependent='CSI_CTE', random=TRUE)
+r3
+```
+- Ajustando el modelo con todos los datos de entrenamiento
+
+```{r}
+res3 = lmer(m3, data = train_set)
+summary(res3)
+```
+
+. R2 del modelo 3:
+
+```{r}
+r23 <- MuMIn::r.squaredGLMM(res3)
+aic3 <- AIC(res3)
+pred3 <-  predict(res3, test_set, allow.new.levels=TRUE)
+
+# Get the Root Mean Square Error between the predicted and the observed
+MSE_po3 <- mse(pred3, test_set[['CSI_CTE']])
+```
+
+
+```{r}
+   
+m3_sum <- data.frame("Modelo 3", m3, r3,r23[1], r23[2], MSE_po3, aic3)      
+  
+#Naming the Data Frame - Step 2  
+#"modelo", "formula", "mse_valcruz", "r2_entrenamiento" , "mse_po", "aic")
+names(m3_sum) <- nombre_cols
+  
+#Using rbind() function to insert above observation  
+model_summary <- rbind(model_summary, m3_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+
+### **Modelo 4**
+
+Modelo con intercepto aleatorio y Variación unidades aprobadas y Tasa de desempleo (rezago) como efectos fijos. En este caso, se conjugan las variables que han presentado una significancia estadística.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("M4")
+m4
+r4 <- crossvalidate(train_set, k=4, model=m4, dependent='CSI_CTE', random=TRUE)
+r4
+```
+- Ajustando el modelo con todo el conjunto de entrenamiento
+
+```{r}
+res4 = lmer(m4, data = train_set)
+summary(res4)
+```
+
+- R2 del modelo 4.
+
+```{r}
+r24 <- MuMIn::r.squaredGLMM(res4)
+aic4 <- AIC(res4)
+pred4 <-  predict(res4, test_set, allow.new.levels=TRUE)
+
+# Get the Root Mean Square Error between the predicted and the observed
+MSE_po4 <- mse(pred4, test_set[['CSI_CTE']])
+
+```
+
+```{r}
+#Data Frame - Step 1    
+m4_sum <- data.frame("Modelo 4", m4, r4,r24[1], r24[2], MSE_po4, aic4)      
+  
+#Naming the Data Frame - Step 2  
+#"modelo", "formula", "mse_valcruz", "r2_entrenamiento" , "mse_po", "aic")
+names(m4_sum) <- nombre_cols
+  
+# Using rbind() function to insert above observation  
+model_summary <- rbind(model_summary, m4_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+
+### **Modelo 5**
+
+Modelo con intercepto y pendiente aleatoria, y variación del PIB de la construcción para edificaciones residenciales y no residenciales por categoría como efectos fijos. La variable de los efectos fijos es una interacción en la que se intenta explicar el efecto conjunto de la variación del PIB de las clases según la clasificación de cada empresa.
+
+- Validación cruzada y el promedio de los errores cuadráticos medios. 
+
+```{r}
+print("M5")
+m5
+r5 <- crossvalidate(train_set, k=4, model=m5, dependent='CSI_CTE', random=TRUE)
+r5
+```
+- Ajustando el modelo con todo el conjunto de entrenamiento
+
+```{r}
+res5 = lmer(m5, data = train_set)
+summary(res5)
+```
+
+- Validación modelo 5.
+
+```{r}
+r25 <- MuMIn::r.squaredGLMM(res5)
+aic5 <- AIC(res5)
+pred5 <-  predict(res5, test_set, allow.new.levels=TRUE)
+
+# Get the Root Mean Square Error between the predicted and the observed
+MSE_po5 <- mse(pred5, test_set[['CSI_CTE']])
+```
+
+
+```{r}
+#Data Frame - Step 1    
+m5_sum <- data.frame("Modelo 5", m5, r5, r25[1], r25[2], MSE_po5, aic5)      
+  
+#Naming the Data Frame - Step 2  
+#"modelo", "formula", "mse_valcruz", "r2_entrenamiento" , "mse_po", "aic")
+names(m5_sum) <- nombre_cols
+  
+# Using rbind() function to insert above observation  
+model_summary <- rbind(model_summary, m5_sum)  
+model_summary %>%
+  kbl(row.names = FALSE) %>%
+  kable_styling()
+
+```
+
+
+Los modelos que presentan los mejores resultados en relación a menores valores AIC, el menor error cuadrático medio y el R2 condicional son el modelo 2 y 5.
+
+Puede observarse que para ambos modelos el R2 marginal donde se describe la proporción de varianza explicada por los factores fijos es bajo, siendo de un 2% para el modelo 2 y 52% para el modelo 5, y la métrica del r2 condicional que describe la proporción de la varianza explicada por los factores fijos y aleatorios es más alta para el modelo 5, lo que indica que este modelo captura  mas el comportamiento de los datos, la varianza explicada es del 80%.
+
+Adicional, todos los modelos probados presentaron que la varianza del efecto aleatorio fue limitada, al estar muy cercana a cero, lo que indica que hay poca variación del tamaño del efecto en la variable respuesta.
+
+
+```{r include = FALSE}
+obs <- test_set$CSI_CTE
+
+#Grafica de reales versus observados con el modelo 2
+m2 <- ggplot() +                    # basic graphical object
+  geom_point(aes(x=obs, y=pred2), colour="red")+
+  ggtitle("Predicho vs Observado (M2)")+xlab("Observado") + ylab("Predicho") +
+  xlim(0.75,1.05) + ylim(0.75,1.05)+
+  geom_abline(slope=1, intercept=0) 
+
+#Grafica de reales versus observados con el modelo 5
+m5 <- ggplot() +                    # basic graphical object
+  geom_point(aes(x=obs, y=pred5), colour="red")+
+  ggtitle("Predicho vs Observado (M5)")+xlab("Observado") + ylab("Predicho") +
+  xlim(0.75,1.05) + ylim(0.75,1.05)+
+  geom_abline(slope=1, intercept=0)
+```
+
+
+```{r}
+ggarrange(m2, m5, 
+          labels = c("A", "B"),
+          ncol = 2, nrow = 1)
+```
+
+
+```{r}
+anova(res2,res0, refit=FALSE)
+```
+
+
+```{r}
+anova(res5,res0, refit=FALSE)
+```
+Con los ANOVA podemos determinar que los modelos 2 y 5 son estadísticamente diferentes con respecto al modelo base, es decir, aquel que se hizo solo con el intercepto. 
+
+```{r}
+MAPE(pred2,obs)
+MAPE(pred5,obs)
+```
+Se observa que ambos modelos tienen un buen nivel de prónostico, el error porcentual absoluto medio es bajo para ambos casos, destacando en especial el modelo 5. 
+
+## **Interpretación de las variables** 
+*Modelo 2*
+De acuerdo con los valores obtenidos en el ajuste del modelo 2, dada una tasa de desempleo rezagada del 0%, el valor esperado de los costos sobre los ingresos de una empresa del sector construcción  es de 0.415, lo que daría a entender que los ingresos son mayores que los costos. Esto es esperable, ya que al disminuir la tasa de desempleo, se podría intuir que las personas pueden acceder a inmuebles y los ingresos de las empresas aumentarían.
+
+Al aumentar en un punto porcentual la tasa de desempleo la relación de costos sobre ingresos aumenta en promedio 0.055, ya que al aumentar el desempleo, puede llevar a una disminución de los ingresos.
+
+*Modelo 5*
+Modelo con pendiente aleatoria para cada año dependiendo de la categoría de las empresas, y variación del PIB de la construcción para edificaciones residenciales y no residenciales y categoría de la empresa como efectos fijos.
+
+En los resultados obtenidos del modelo 5, se observa la significancia de la pendiente aleatoria, dado por la presencia de varianzas diferentes de cero para cada año y para la categoría de las empresas analizadas. En cuanto a los efectos fijos, se observa una relación negativa entre la variación del PIB de la construcción para edificaciones residenciales y no residenciales con nuestra variable respuesta. Un aumento de un punto porcentual en la variación del PIB llevaría en promedio, a una disminución de 0.0014 en la relación costos sobre ingresos. La explicación para esto, es que probablemente, un crecimiento del PIB llevaría a un aumento de los ingresos de las empresas, y consigo a una disminución de la variable respuesta.
+
+En este modelo también se observa un aumento del valor promedio de la variable respuesta a medida que se avanza en la escala ascendente de las categorías de las empresas, en consonancia a cómo se categorizaron las empresas.
+
+Además, en este modelo, los factores fijos explican cerca del 44% de la varianza, mientras que la proporción de varianza explicada por los factores fijos y aleatorios es del 72%.
+
+## **Conclusiones**
+
+- Recolectar la información de las variables macroeconómicas es posible al haber fuentes oficiales con información histórica. Se realizó la búsqueda de información en el Banco de la República, para el sector de la construcción se encontró información consolidada en Camacol y se pudieron obtener otras variables desde el DANE. Estas variables ayudaron a mejorar el entendimiento del sector y permitieron ejecutar análisis adicionales en los modelos. Se adjunta el catálogo de conjuntos de datos y sus fuentes.
+
+- Al momento de construir modelos es fundamental realizar como investigador una exploración sobre las variables y el contexto del entorno a modelar, esto es de gran importancia para determinar las posibles estrategias a desarrollar al momento de realizar transformaciones o construcciones de los posibles modelos.
+
+- Al abordar un problema donde la variable a explicar es tan dispersa, para este caso los costos y gastos de las empresas, se debe encontrar una estrategia para estabilizar la variabilidad. Esto permite que los modelos tengan un mejor ajuste y se puedan encontrar mejores relaciones entre las variables explicativas y la variable respuesta. Es decir, el análisis de la construcción de variables es esencial al momento de modelar. 
+
+- Al trabajar con variables en precios corrientes, como los ingresos, los costos, los gastos, entre otras, es fundamental convertirlas en pesos constantes, con el fin de que los datos puedan ser comparables, eliminando el efecto de los precios en el tiempo. De igual forma, las variables en términos absolutos que provienen de las fuentes consultadas deberán ser homologadas a un mismo año, para garantizar la comparabilidad de los datos.
+
+- Para la estimación de los modelos mixtos, posterior a la fase del análisis exploratorio, es clave identificar la presencia o no de efectos aleatorios, tanto en intercepto como en pendiente, además, de seleccionar variables para los efectos fijos, pero que respondan a algunas teorías económicas convencionales, para garantizar la interpretabilidad de los resultados en términos prácticos.
+
+- Conforme hemos avanzado en la obtención de conocimiento en los primeros dos semestres de la maestría antes de la asignatura de métodos estadísticos avanzados, nos encontramos con problemas en los cuales, si bien las fuentes de datos poseen una estructura multivariada, estas conservaban un solo nivel. Con los conocimientos vistos en esta materia, podemos encontrar datos agrupados en dos o más niveles, y relaciones con factores fijos y aleatorios. Esto nos lleva a interpretar modelos más complejos y resolver preguntas más sofisticadas. Además de que estos modelos son flexibles en relación con los supuestos básicos de normalidad de los residuos.
+
+- Con los modelos desarrollados se logró encontrar como algunas variables macroeconómicas explican parte de la variabilidad de los costos y gastos sobre los ingresos de las empresas. 
+a
+
+- En los modelos que obtuvieron el mejor ajuste (el 2 y el 5), se observa como la variable respuesta (costos y gatos/ingresos) estuvo explicada por la tasa de desempleo (con rezago) y la variación del PIB del sector construcción para edificaciones residenciales y no residenciales. Variables que desde la teoría económica están estrechamente ligadas a la evolución de la variable respuesta, especialmente, desde un enfoque de demanda y su incidencia directa sobre los ingresos. Finalmente, se logró con el modelo 5, que los factores fijos y aleatorios, explicaran el 70% de la varianza.
+
+## **Estimación del esfuerzo**
+
+|Actividad                                           | Porcentaje | 
+|----------------------------------------------------|------------|
+|Consolidación de información                        |     15%    |
+|Transformación de variables y análisis descriptivo  |     35%    |
+|Ajuste y validación de modelos                      |     40%    |
+|Redacción del reporte                               |     10%    |	
+
+
+
+## **Referencias**
+
